@@ -19,13 +19,13 @@ type allDelivery []types.Delivery
 var deliverys = allDelivery{
 	{
 		IDResi:  1,
-		IDKota:  3,
+		Kota:    "Jepara",
 		Status:  0,
 		Ordinal: 1,
 	},
 	{
 		IDResi:  1,
-		IDKota:  1,
+		Kota:    "Jakarta",
 		Status:  1,
 		Ordinal: 2,
 	},
@@ -71,7 +71,7 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id_resi, id_kota, status, ordinal, date_time from tb_delivery WHERE id_resi = $1", idStatus)
+	rows, err := db.Query("SELECT id_resi, nama_city, status, ordinal, date_time from tb_delivery INNER JOIN tb_city ON tb_delivery.id_kota = tb_city.id_city WHERE id_resi = $1", idStatus)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -85,7 +85,7 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 		data := types.Delivery{}
 		err := rows.Scan(
 			&data.IDResi,
-			&data.IDKota,
+			&data.Kota,
 			&data.Status,
 			&data.Ordinal,
 			&data.Time,
