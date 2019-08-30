@@ -1,11 +1,14 @@
 package service
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
+	"trackerpedia-server/config"
 	"trackerpedia-server/types"
 
 	"github.com/gorilla/mux"
@@ -56,11 +59,46 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "[GetStatusDeliveryByID] failed to read the json body")
 		return
 	}
-	for _, oneDelivery := range deliverys {
-		if oneDelivery.IDResi == idStatus {
-			json.NewEncoder(w).Encode(oneDelivery)
-		}
+
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		return
+	}
+
+	rows, err := db.Query("SELECT * from tb_delivery WHERE id_resi = $1", idStatus)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer rows.Close()
+
+	var datas []types.Delivery
+
+	for rows.Next() {
+		data := types.Delivery{}
+		err := rows.Scan(
+			&data.IDResi,
+			&data.IDKota,
+			&data.Status,
+			&data.Ordinal,
+			&data.Time,
+		)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		datas = append(datas, data)
+	}
+
+	json.NewEncoder(w).Encode(datas)
+
 }
 
 // UpdateStatusDelivery is function to update status tracker

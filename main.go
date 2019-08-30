@@ -6,6 +6,8 @@ import (
 
 	"trackerpedia-server/service"
 
+	_ "github.com/lib/pq"
+
 	"github.com/gorilla/mux"
 )
 

@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 // StatusDelivery is struct for updating delivery status every city
 type StatusDelivery struct {
 	IDResi int    `json:"IDResi"`
@@ -15,10 +17,11 @@ type StatusOrder struct {
 
 // Delivery is struct for Delivery tabel
 type Delivery struct {
-	IDResi  int `json:"IDResi"`
-	IDKota  int `json:"IDKota"`
-	Status  int `json:"Status"`
-	Ordinal int `json:"Ordinal"`
+	IDResi  int       `json:"IDResi"`
+	IDKota  int       `json:"IDKota"`
+	Status  int       `json:"Status"`
+	Ordinal int       `json:"Ordinal"`
+	Time    time.Time `json:"Time"`
 }
 
 // Order is struct for Order Table
