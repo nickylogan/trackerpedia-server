@@ -16,6 +16,14 @@ type event struct {
 	Description string `json:"Description"`
 }
 
+type tracker struct {
+	IDResi int    `json:"IDResi"`
+	Kota   string `json:"Kota"`
+	Status int    `json:"Status"`
+}
+
+type statusOrder []tracker
+
 type allEvents []event
 
 var events = allEvents{
@@ -89,11 +97,30 @@ func deleteEvent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateStatusOrder is function to update status order
+func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
+
+	var cityStatus tracker
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Println("[UpdateStatusOrder] failed to read the json body")
+	}
+	err = json.Unmarshal(body, &cityStatus)
+	if err != nil {
+		fmt.Println("[UpdateStatusOrder] failed when unmarshalling json")
+	}
+
+	fmt.Println(cityStatus)
+	json.NewEncoder(w).Encode(cityStatus)
+}
+
 func main() {
 	// initEvents()
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", homeLink)
 	router.HandleFunc("/event", createEvent).Methods("POST")
+	router.HandleFunc("/tracker", UpdateStatusOrder).Methods("POST")
 	router.HandleFunc("/events", getAllEvents).Methods("GET")
 	router.HandleFunc("/events/{id}", getOneEvent).Methods("GET")
 	router.HandleFunc("/events/{id}", updateEvent).Methods("PATCH")
