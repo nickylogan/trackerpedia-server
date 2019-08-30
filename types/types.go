@@ -5,7 +5,7 @@ import "time"
 // Delivery is struct for Delivery tabel
 type Delivery struct {
 	IDResi  int       `json:"IDResi"`
-	IDKota  int       `json:"IDKota"`
+	Kota    string    `json:"Kota"`
 	Status  int       `json:"Status"`
 	Ordinal int       `json:"Ordinal"`
 	Time    time.Time `json:"Time"`
