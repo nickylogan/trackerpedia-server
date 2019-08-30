@@ -35,14 +35,14 @@ type allOrder []types.Order
 
 var orders = allOrder{
 	{
-		IDOrder: 1,
-		IDItem:  1,
-		Status:  "Dalam Pengiriman",
+		IDOrder:  1,
+		NamaItem: "Panci",
+		Status:   "Dalam Pengiriman",
 	},
 	{
-		IDOrder: 2,
-		IDItem:  3,
-		Status:  "Di Gudang",
+		IDOrder:  2,
+		NamaItem: "kursi",
+		Status:   "Di Gudang",
 	},
 }
 
@@ -162,7 +162,7 @@ func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id_order,id_item,status,time_stamp,destination_address,destination_city from tb_order WHERE id_order = $1", idStatus)
+	rows, err := db.Query("SELECT id_order,nama_item,status,time_stamp,destination_address,destination_city from tb_order INNER JOIN tb_item ON tb_order.id_item=tb_item.id_item WHERE id_order = $1", idStatus)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -176,7 +176,7 @@ func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
 		data := types.Order{}
 		err := rows.Scan(
 			&data.IDOrder,
-			&data.IDItem,
+			&data.NamaItem,
 			&data.Status,
 			&data.Time,
 			&data.DestinationAddress,

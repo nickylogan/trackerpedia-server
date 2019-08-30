@@ -14,7 +14,7 @@ type Delivery struct {
 // Order is struct for Order Table
 type Order struct {
 	IDOrder            int       `json:"IDOrder"`
-	IDItem             int       `json:"IDItem"`
+	NamaItem           string    `json:"NamaItem"`
 	Status             string    `json:"Status"`
 	Time               time.Time `json:"Time"`
 	DestinationAddress string    `json:"DestinationAddress"`
