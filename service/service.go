@@ -150,11 +150,46 @@ func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "[GetStatusOrderByID] failed to read the json body")
 		return
 	}
-	for _, oneOrder := range orders {
-		if oneOrder.IDOrder == idStatus {
-			json.NewEncoder(w).Encode(oneOrder)
-		}
+
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		return
+	}
+
+	rows, err := db.Query("SELECT id_order,id_item,status,time_stamp,destination_address,destination_city from tb_order WHERE id_order = $1", idStatus)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer rows.Close()
+
+	var datas []types.Order
+
+	for rows.Next() {
+		data := types.Order{}
+		err := rows.Scan(
+			&data.IDOrder,
+			&data.IDItem,
+			&data.Status,
+			&data.Time,
+			&data.DestinationAddress,
+			&data.DestinationCity,
+		)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		datas = append(datas, data)
+	}
+
+	json.NewEncoder(w).Encode(datas)
 }
 
 // UpdateStatusOrder is function to update status order
