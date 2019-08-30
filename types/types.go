@@ -15,6 +15,7 @@ type Delivery struct {
 type Order struct {
 	IDOrder            int       `json:"IDOrder"`
 	NamaItem           string    `json:"NamaItem"`
+	Weight             string    `json:"Weight"`
 	Status             string    `json:"Status"`
 	Time               time.Time `json:"Time"`
 	DestinationAddress string    `json:"DestinationAddress"`
