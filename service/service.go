@@ -282,3 +282,47 @@ func CreateNewDelivery(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+func GetOrderSent(w http.ResponseWriter, r *http.Request) {
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		return
+	}
+
+	rows, err := db.Query("SELECT id_order,nama_item,weight,status,time_stamp,destination_address,destination_city from tb_order INNER JOIN tb_item ON tb_order.id_item=tb_item.id_item WHERE tb_order.status = $1", "SENT")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer rows.Close()
+
+	var datas []types.Order
+
+	for rows.Next() {
+		data := types.Order{}
+		err := rows.Scan(
+			&data.IDOrder,
+			&data.NamaItem,
+			&data.Weight,
+			&data.Status,
+			&data.Time,
+			&data.DestinationAddress,
+			&data.DestinationCity,
+		)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		datas = append(datas, data)
+	}
+
+	json.NewEncoder(w).Encode(datas)
+
+}
