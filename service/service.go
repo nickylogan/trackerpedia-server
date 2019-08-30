@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"trackerpedia-server/config"
@@ -14,38 +15,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type allDelivery []types.Delivery
-
-var deliverys = allDelivery{
-	{
-		IDResi:  1,
-		Kota:    "Jepara",
-		Status:  0,
-		Ordinal: 1,
-	},
-	{
-		IDResi:  1,
-		Kota:    "Jakarta",
-		Status:  1,
-		Ordinal: 2,
-	},
-}
-
-type allOrder []types.Order
-
-var orders = allOrder{
-	{
-		IDOrder:  1,
-		NamaItem: "Panci",
-		Status:   "Dalam Pengiriman",
-	},
-	{
-		IDOrder:  2,
-		NamaItem: "kursi",
-		Status:   "Di Gudang",
-	},
-}
-
 // Home is function on welcome page
 func Home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to Tracker System!")
@@ -53,6 +22,7 @@ func Home(w http.ResponseWriter, r *http.Request) {
 
 //GetStatusDeliveryByID is function to get all status tracker with parameter ID
 func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	param := mux.Vars(r)["id"]
 	idStatus, err := strconv.Atoi(param)
 	if err != nil {
@@ -103,11 +73,12 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 
 // UpdateStatusDelivery is function to update status tracker
 func UpdateStatusDelivery(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 
 	// StatusDelivery is struct for updating delivery status every city
 	type statusDelivery struct {
-		IDResi int `json:"IDResi"`
-		IDKota int `json:"IDKota"`
+		IDResi int `json:"idResi"`
+		IDKota int `json:"idKota"`
 	}
 	var response statusDelivery
 
@@ -144,6 +115,7 @@ func UpdateStatusDelivery(w http.ResponseWriter, r *http.Request) {
 
 //GetStatusOrderByID is function to get all status tracker with parameter ID
 func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	param := mux.Vars(r)["id"]
 	idStatus, err := strconv.Atoi(param)
 	if err != nil {
@@ -195,11 +167,12 @@ func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
 
 // UpdateStatusOrder is function to update status order
 func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 
 	//StatusOrder is struct for updating order status
 	type statusOrder struct {
-		IDOrder int    `json:"IDOrder"`
-		Status  string `json:"Status"`
+		IDOrder int    `json:"idOrder"`
+		Status  string `json:"status"`
 	}
 	var response statusOrder
 
@@ -237,8 +210,9 @@ func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
 
 // CreateNewDelivery is function for creating new delivery
 func CreateNewDelivery(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	type dataDelivery struct {
-		IDResi int `json:"IDResi"`
+		IDResi int `json:"idResi"`
 	}
 
 	var response dataDelivery
@@ -281,9 +255,17 @@ func CreateNewDelivery(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	_, err = db.Exec("UPDATE tb_order SET status = $1 WHERE id_order = $2", "SENT", response.IDResi)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
+//GetOrderSent is function for get All drom order where status is SENT
 func GetOrderSent(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	connect, err := config.Connection()
 	if err != nil {
 		fmt.Println(err)
@@ -327,7 +309,9 @@ func GetOrderSent(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetAllOrder is function for get All from table order
 func GetAllOrder(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	connect, err := config.Connection()
 	if err != nil {
 		fmt.Println(err)
@@ -369,4 +353,47 @@ func GetAllOrder(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(datas)
 
+}
+
+// CreateNewOrder is function to create new order
+func CreateNewOrder(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	type newOrder struct {
+		IDItem  int    `json:"idItem"`
+		Address string `json:"address"`
+	}
+	var response newOrder
+
+	orderNew, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Fprintf(w, "[UpdateStatusOrder] failed to read the json body")
+		return
+	}
+
+	err = json.Unmarshal(orderNew, &response)
+	if err != nil {
+		fmt.Fprintf(w, "[UpdateStatusOrder] failed when unmarshalling json")
+		return
+	}
+
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	idOrder := rand.Intn(10000)
+
+	_, err = db.Exec("INSERT INTO tb_order (id_order, id_item, status, destination_address, destination_city) VALUES ($1, $2, $3, $4, $5)", idOrder, response.IDItem, "PENDING", response.Address, "Jakarta")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }

@@ -21,5 +21,6 @@ func main() {
 	router.HandleFunc("/order_sent", service.GetOrderSent).Methods("GET")
 	router.HandleFunc("/allOrder", service.GetAllOrder).Methods("GET")
 	router.HandleFunc("/newDelivery", service.CreateNewDelivery).Methods("POST")
+	router.HandleFunc("/newOrder", service.CreateNewOrder).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
