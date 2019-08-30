@@ -13,10 +13,6 @@ const (
 	dbname   = "devcamp"
 )
 
-// var Koneksi string = fmt.Sprintf("host=%s port=%d user=%s "+
-// 	"password=%s dbname=%s sslmode=disable",
-// 	host, port, user, password, dbname)
-
 // Connection is function for connecting system to database
 func Connection() (string, error) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+

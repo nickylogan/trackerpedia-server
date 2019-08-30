@@ -71,7 +71,7 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT * from tb_delivery WHERE id_resi = $1", idStatus)
+	rows, err := db.Query("SELECT id_resi, id_kota, status, ordinal, date_time from tb_delivery WHERE id_resi = $1", idStatus)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -103,7 +103,13 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 
 // UpdateStatusDelivery is function to update status tracker
 func UpdateStatusDelivery(w http.ResponseWriter, r *http.Request) {
-	var response types.StatusDelivery
+
+	// StatusDelivery is struct for updating delivery status every city
+	type statusDelivery struct {
+		IDResi int `json:"IDResi"`
+		IDKota int `json:"IDKota"`
+	}
+	var response statusDelivery
 
 	deliveryStatus, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
@@ -117,7 +123,23 @@ func UpdateStatusDelivery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(response)
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	_, err = db.Exec("UPDATE tb_delivery SET status = 1 WHERE id_resi = $1 AND id_kota = $2", response.IDResi, response.IDKota)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 //GetStatusOrderByID is function to get all status tracker with parameter ID
@@ -137,7 +159,13 @@ func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
 
 // UpdateStatusOrder is function to update status order
 func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
-	var response types.StatusOrder
+
+	//StatusOrder is struct for updating order status
+	type statusOrder struct {
+		IDOrder int    `json:"IDOrder"`
+		Status  string `json:"Status"`
+	}
+	var response statusOrder
 
 	orderStatus, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
@@ -152,5 +180,21 @@ func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(response)
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	_, err = db.Exec("UPDATE tb_order SET status = $1 WHERE id_order = $2", response.Status, response.IDOrder)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
