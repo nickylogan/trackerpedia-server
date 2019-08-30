@@ -12,7 +12,9 @@ import (
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", service.Home)
-	router.HandleFunc("/tracker", service.UpdateStatusTracker).Methods("POST")
+	router.HandleFunc("/tracker", service.UpdateStatusDelivery).Methods("POST")
+	router.HandleFunc("/tracker/{id}", service.GetStatusDeliveryByID).Methods("GET")
 	router.HandleFunc("/order", service.UpdateStatusOrder).Methods("POST")
+	router.HandleFunc("/order/{id}", service.GetStatusOrderByID).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
