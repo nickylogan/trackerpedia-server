@@ -22,7 +22,8 @@ func Home(w http.ResponseWriter, r *http.Request) {
 
 //GetStatusDeliveryByID is function to get all status tracker with parameter ID
 func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 	param := mux.Vars(r)["id"]
 	idStatus, err := strconv.Atoi(param)
 	if err != nil {
@@ -41,7 +42,7 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id_resi, nama_city, status, ordinal, date_time from tb_delivery INNER JOIN tb_city ON tb_delivery.id_kota = tb_city.id_city WHERE id_resi = $1 AND status = 1", idStatus)
+	rows, err := db.Query("SELECT id_resi, nama_city, status, ordinal, date_time from tb_delivery INNER JOIN tb_city ON tb_delivery.id_kota = tb_city.id_city WHERE id_resi = $1 AND status = 1 ORDER BY ordinal ASC", idStatus)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -51,8 +52,15 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 
 	var datas []types.Delivery
 
+	counter := 0
+
+	var next bool = true
+
 	for rows.Next() {
 		data := types.Delivery{}
+		if counter == 4 {
+			next = false
+		}
 		err := rows.Scan(
 			&data.IDResi,
 			&data.Kota,
@@ -60,10 +68,13 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 			&data.Ordinal,
 			&data.Time,
 		)
+		data.Next = next
+		counter++
 		if err != nil {
 			log.Println(err)
 			continue
 		}
+
 		datas = append(datas, data)
 	}
 
@@ -73,13 +84,18 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 
 // UpdateStatusDelivery is function to update status tracker
 func UpdateStatusDelivery(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 
 	// StatusDelivery is struct for updating delivery status every city
 	type statusDelivery struct {
 		IDResi int `json:"idResi"`
+	}
+
+	type resultQuery struct {
 		IDKota int `json:"idKota"`
 	}
+
 	var response statusDelivery
 
 	deliveryStatus, err := ioutil.ReadAll(r.Body)
@@ -106,7 +122,28 @@ func UpdateStatusDelivery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("UPDATE tb_delivery SET status = 1 WHERE id_resi = $1 AND id_kota = $2", response.IDResi, response.IDKota)
+	rows, err := db.Query("SELECT id_kota FROM tb_delivery WHERE id_resi = $1 AND status = 0 LIMIT 1", response.IDResi)
+	if err != nil {
+		fmt.Println(err, "error 1")
+		return
+	}
+
+	defer rows.Close()
+
+	var datas resultQuery
+
+	for rows.Next() {
+		datas = resultQuery{}
+		err := rows.Scan(
+			&datas.IDKota,
+		)
+		if err != nil {
+			fmt.Println(err, "error 2")
+			continue
+		}
+	}
+
+	_, err = db.Exec("UPDATE tb_delivery SET status = 1 WHERE id_resi = $1 AND id_kota = $2", response.IDResi, datas.IDKota)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -115,7 +152,8 @@ func UpdateStatusDelivery(w http.ResponseWriter, r *http.Request) {
 
 //GetStatusOrderByID is function to get all status tracker with parameter ID
 func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 	param := mux.Vars(r)["id"]
 	idStatus, err := strconv.Atoi(param)
 	if err != nil {
@@ -167,7 +205,8 @@ func GetStatusOrderByID(w http.ResponseWriter, r *http.Request) {
 
 // UpdateStatusOrder is function to update status order
 func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 
 	//StatusOrder is struct for updating order status
 	type statusOrder struct {
@@ -210,7 +249,9 @@ func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
 
 // CreateNewDelivery is function for creating new delivery
 func CreateNewDelivery(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	fmt.Println("Handle delivery")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 	type dataDelivery struct {
 		IDResi int `json:"idResi"`
 	}
@@ -265,7 +306,8 @@ func CreateNewDelivery(w http.ResponseWriter, r *http.Request) {
 
 //GetOrderSent is function for get All drom order where status is SENT
 func GetOrderSent(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 	connect, err := config.Connection()
 	if err != nil {
 		fmt.Println(err)
@@ -311,21 +353,23 @@ func GetOrderSent(w http.ResponseWriter, r *http.Request) {
 
 // GetAllOrder is function for get All from table order
 func GetAllOrder(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 	connect, err := config.Connection()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err, "error 1")
 		return
 	}
 
 	db, err := sql.Open("postgres", connect)
 	if err != nil {
+		fmt.Println(err, "error 2")
 		return
 	}
 
-	rows, err := db.Query("SELECT id_order,nama_item,weight,status,time_stamp,destination_address,destination_city from tb_order INNER JOIN tb_item ON tb_order.id_item=tb_item.id_item")
+	rows, err := db.Query("SELECT id_order,nama_item,weight,status,time_stamp,destination_address,destination_city from tb_order INNER JOIN tb_item ON tb_order.id_item=tb_item.id_item ORDER BY time_stamp DESC")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err, "error 3")
 		return
 	}
 
@@ -357,7 +401,14 @@ func GetAllOrder(w http.ResponseWriter, r *http.Request) {
 
 // CreateNewOrder is function to create new order
 func CreateNewOrder(w http.ResponseWriter, r *http.Request) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
+	log.Println("Order called")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
+	if r.Method == "OPTIONS" {
+		w.Write([]byte("allowed"))
+		return
+	}
+
 	type newOrder struct {
 		IDItem  int    `json:"idItem"`
 		Address string `json:"address"`
@@ -391,9 +442,56 @@ func CreateNewOrder(w http.ResponseWriter, r *http.Request) {
 
 	idOrder := rand.Intn(10000)
 
-	_, err = db.Exec("INSERT INTO tb_order (id_order, id_item, status, destination_address, destination_city) VALUES ($1, $2, $3, $4, $5)", idOrder, response.IDItem, "PENDING", response.Address, "Jakarta")
+	_, err = db.Exec(
+		"INSERT INTO tb_order (id_order, id_item, status, destination_address, destination_city) VALUES ($1, $2, $3, $4, $5)",
+		idOrder, response.IDItem, "PENDING", response.Address, "Jakarta")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+}
+
+// GetAllItem is function for get All from table order
+func GetAllItem(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err, "error 1")
+		return
+	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		fmt.Println(err, "error 2")
+		return
+	}
+
+	rows, err := db.Query("SELECT id_item, nama_item, price, weight FROM tb_item")
+	if err != nil {
+		fmt.Println(err, "error 3")
+		return
+	}
+
+	defer rows.Close()
+
+	var datas []types.Item
+
+	for rows.Next() {
+		data := types.Item{}
+		err := rows.Scan(
+			&data.IDItem,
+			&data.NameItem,
+			&data.Price,
+			&data.Weight,
+		)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		datas = append(datas, data)
+	}
+
+	json.NewEncoder(w).Encode(datas)
+
 }
