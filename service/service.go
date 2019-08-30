@@ -71,7 +71,7 @@ func GetStatusDeliveryByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id_resi, nama_city, status, ordinal, date_time from tb_delivery INNER JOIN tb_city ON tb_delivery.id_kota = tb_city.id_city WHERE id_resi = $1", idStatus)
+	rows, err := db.Query("SELECT id_resi, nama_city, status, ordinal, date_time from tb_delivery INNER JOIN tb_city ON tb_delivery.id_kota = tb_city.id_city WHERE id_resi = $1 AND status = 1", idStatus)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -231,5 +231,53 @@ func UpdateStatusOrder(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+}
+
+// CreateNewDelivery is function for creating new delivery
+func CreateNewDelivery(w http.ResponseWriter, r *http.Request) {
+	type dataDelivery struct {
+		IDResi int `json:"IDResi"`
+	}
+
+	var response dataDelivery
+
+	deliveryData, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Fprintf(w, "[UpdateStatusOrder] failed to read the json body")
+		return
+	}
+
+	err = json.Unmarshal(deliveryData, &response)
+	if err != nil {
+		fmt.Fprintf(w, "[UpdateStatusOrder] failed when unmarshalling json")
+		return
+	}
+
+	connect, err := config.Connection()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var statusDelivery = 1
+
+	for i := 1; i <= 5; i++ {
+		if i > 1 {
+			statusDelivery = 0
+		}
+
+		_, err = db.Exec("INSERT INTO tb_delivery (id_resi, id_kota, status, ordinal) VALUES ($1, $2, $3, $4)", response.IDResi, i, statusDelivery, i)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 }
